@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -29,45 +30,46 @@ async function run() {
     const books = db.collection('books');
 
     app.post('/books', async (req, res) => {
-      try {
-        const newBook = req.body;
-        const result = await books.insertOne(newBook);
-        res.send(result);
-      } catch (err) {
-        res.status(500).send({ message: 'Error inserting book', error: err });
-      }
+      const newBook = req.body;
+      const result = await books.insertOne(newBook);
+      res.send(result);
     });
 
     app.get('/books', async (req, res) => {
-      const allBooks = await books.find().toArray();
-      res.send(allBooks);
+      // const allBooks = await books.find().sort({ rating: -1 }).toArray();
+      // res.send(allBooks);
+
+      console.log(req.query);
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.userEmail = email;
+      }
+
+      const cursor = books.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
     app.get('/books/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const book = await books.findOne(query);
+      const book = await books.findOne({ _id: new ObjectId(id) });
       res.send(book);
     });
 
     app.patch('/books/:id', async (req, res) => {
       const id = req.params.id;
-      const updatedProduct = req.body;
-      const query = { _id: new ObjectId(id) };
-      const update = {
-        $set: {
-          name: updatedProduct.name,
-          price: updatedProduct.price,
-        },
-      };
-      const result = await books.updateOne(query, update);
+      const updatedBook = req.body;
+      const result = await books.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedBook }
+      );
       res.send(result);
     });
 
     app.delete('/books/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await books.deleteOne(query);
+      const result = await books.deleteOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 
