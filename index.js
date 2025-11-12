@@ -170,6 +170,53 @@ async function run() {
       }
     });
 
+    app.patch('/books/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const {
+          title,
+          author,
+          genre,
+          rating,
+          summary,
+          coverImage,
+          language,
+          publicationYear,
+        } = req.body;
+
+        const updatedFields = {};
+        if (title) updatedFields.title = title;
+        if (author) updatedFields.author = author;
+        if (genre) updatedFields.genre = genre;
+        if (rating) updatedFields.rating = rating;
+        if (summary) updatedFields.summary = summary;
+        if (coverImage) updatedFields.coverImage = coverImage;
+        if (language) updatedFields.language = language;
+        if (publicationYear) updatedFields.publicationYear = publicationYear;
+
+        if (Object.keys(updatedFields).length === 0) {
+          return res.status(400).send({ message: 'No fields to update' });
+        }
+
+        const result = await books.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedFields }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ message: 'Book not found' });
+        }
+
+        res.send({
+          message: 'Book updated successfully',
+          modifiedCount: result.modifiedCount,
+        });
+      } catch (err) {
+        console.error('Error updating book:', err);
+        res.status(500).send({ message: 'Failed to update book' });
+      }
+    });
+
     // Delete book by ID
     app.delete('/books/:id', async (req, res) => {
       try {
