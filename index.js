@@ -22,7 +22,7 @@ const client = new MongoClient(uri, {
 
 // Root route
 app.get('/', (req, res) => {
-  res.send(' Book Haven server is running...');
+  res.send('📚 Book Haven server is running...');
 });
 
 async function run() {
@@ -33,6 +33,7 @@ async function run() {
     const userColl = db.collection('users');
     const comments = db.collection('comments');
 
+    // Get comments for a book
     app.get('/books/:id/comments', async (req, res) => {
       try {
         const bookId = req.params.id;
@@ -46,6 +47,7 @@ async function run() {
       }
     });
 
+    // Add a comment to a book
     app.post('/books/:id/comments', async (req, res) => {
       try {
         const bookId = req.params.id;
@@ -66,6 +68,7 @@ async function run() {
       }
     });
 
+    // Add a new book
     app.post('/books', async (req, res) => {
       try {
         const newBook = req.body;
@@ -77,6 +80,7 @@ async function run() {
       }
     });
 
+    // Add a new user
     app.post('/users', async (req, res) => {
       try {
         const newUser = req.body;
@@ -97,6 +101,7 @@ async function run() {
       }
     });
 
+    // Get all books (optionally by email)
     app.get('/books', async (req, res) => {
       try {
         const email = req.query.email;
@@ -112,6 +117,7 @@ async function run() {
       }
     });
 
+    // Get recent books
     app.get('/recentBook', async (req, res) => {
       try {
         const limit = parseInt(req.query.limit) || 6;
@@ -125,6 +131,7 @@ async function run() {
       }
     });
 
+    // Get book by ID
     app.get('/books/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -136,6 +143,18 @@ async function run() {
       }
     });
 
+    app.get('/books/by-email/:email', async (req, res) => {
+      try {
+        const email = req.params.email;
+        const result = await books.find({ userEmail: email }).toArray();
+        res.send(result);
+      } catch (err) {
+        console.error('Error fetching books by email:', err);
+        res.status(500).send({ message: 'Failed to fetch books' });
+      }
+    });
+
+    // Update book by ID
     app.patch('/books/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -151,6 +170,7 @@ async function run() {
       }
     });
 
+    // Delete book by ID
     app.delete('/books/:id', async (req, res) => {
       try {
         const id = req.params.id;
