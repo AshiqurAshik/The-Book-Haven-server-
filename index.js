@@ -44,6 +44,7 @@ async function run() {
         res.send(result);
       } catch (err) {
         console.error('Error fetching comments:', err);
+        res.status(500).send({ message: 'Failed to fetch comments' });
       }
     });
 
@@ -65,6 +66,7 @@ async function run() {
         res.send({ message: 'Comment added', commentId: result.insertedId });
       } catch (err) {
         console.error('Error adding comment:', err);
+        res.status(500).send({ message: 'Failed to add comment' });
       }
     });
 
@@ -107,9 +109,7 @@ async function run() {
         const email = req.query.email;
         const query = email ? { userEmail: email } : {};
 
-        const cursor = books.find(query).sort({ rating: -1 });
-        const result = await cursor.toArray();
-
+        const result = await books.find(query).sort({ rating: -1 }).toArray();
         res.send(result);
       } catch (err) {
         console.error('Error fetching books:', err);
@@ -120,10 +120,12 @@ async function run() {
     // Get recent books
     app.get('/recentBook', async (req, res) => {
       try {
-        const limit = parseInt(req.query.limit) || 6;
-        const cursor = books.find().sort({ _id: -1 }).limit(limit);
-        const result = await cursor.toArray();
-
+        const limit = parseInt(req.query.limit) || 3;
+        const result = await books
+          .find()
+          .sort({ _id: -1 })
+          .limit(limit)
+          .toArray();
         res.send(result);
       } catch (err) {
         console.error('Error fetching recent books:', err);
@@ -143,6 +145,7 @@ async function run() {
       }
     });
 
+    // Get books by email
     app.get('/books/by-email/:email', async (req, res) => {
       try {
         const email = req.params.email;
@@ -150,7 +153,26 @@ async function run() {
         res.send(result);
       } catch (err) {
         console.error('Error fetching books by email:', err);
-        res.status(500).send({ message: 'Failed to fetch books' });
+        res.status(500).send({ message: 'Failed to fetch books by email' });
+      }
+    });
+
+    // Get books by genre (case-insensitive)
+    app.get('/home/genre/:genre', async (req, res) => {
+      try {
+        const genreParam = req.params.genre;
+        const limit = parseInt(req.query.limit) || 6;
+
+        const result = await books
+          .find({ genre: { $regex: `^${genreParam}$`, $options: 'i' } })
+          .sort({ _id: -1 })
+          .limit(limit)
+          .toArray();
+
+        res.send(result);
+      } catch (err) {
+        console.error('Error fetching books by genre:', err);
+        res.status(500).send({ message: 'Failed to fetch books by genre' });
       }
     });
 
@@ -158,41 +180,7 @@ async function run() {
     app.patch('/books/:id', async (req, res) => {
       try {
         const id = req.params.id;
-        const updatedBook = req.body;
-        const result = await books.updateOne(
-          { _id: new ObjectId(id) },
-          { $set: updatedBook }
-        );
-        res.send(result);
-      } catch (err) {
-        console.error('Error updating book:', err);
-        res.status(500).send({ message: 'Failed to update book' });
-      }
-    });
-
-    app.patch('/books/:id', async (req, res) => {
-      try {
-        const id = req.params.id;
-        const {
-          title,
-          author,
-          genre,
-          rating,
-          summary,
-          coverImage,
-          language,
-          publicationYear,
-        } = req.body;
-
-        const updatedFields = {};
-        if (title) updatedFields.title = title;
-        if (author) updatedFields.author = author;
-        if (genre) updatedFields.genre = genre;
-        if (rating) updatedFields.rating = rating;
-        if (summary) updatedFields.summary = summary;
-        if (coverImage) updatedFields.coverImage = coverImage;
-        if (language) updatedFields.language = language;
-        if (publicationYear) updatedFields.publicationYear = publicationYear;
+        const updatedFields = req.body;
 
         if (Object.keys(updatedFields).length === 0) {
           return res.status(400).send({ message: 'No fields to update' });
