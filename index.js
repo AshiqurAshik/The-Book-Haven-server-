@@ -8,9 +8,9 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection URI
-const uri =
-  'mongodb+srv://BookHaverUser:IZcvWq8jX3XPEmGd@cluster0.4jfw6yd.mongodb.net/?appName=Cluster0';
+require('dotenv').config();
+
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.4jfw6yd.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -20,20 +20,18 @@ const client = new MongoClient(uri, {
   },
 });
 
-// Root route
 app.get('/', (req, res) => {
   res.send('📚 Book Haven server is running...');
 });
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const db = client.db('sample_book');
     const books = db.collection('books');
     const userColl = db.collection('users');
     const comments = db.collection('comments');
 
-    // Get comments for a book
     app.get('/books/:id/comments', async (req, res) => {
       try {
         const bookId = req.params.id;
@@ -48,7 +46,6 @@ async function run() {
       }
     });
 
-    // Add a comment to a book
     app.post('/books/:id/comments', async (req, res) => {
       try {
         const bookId = req.params.id;
@@ -70,7 +67,6 @@ async function run() {
       }
     });
 
-    // Add a new book
     app.post('/books', async (req, res) => {
       try {
         const newBook = req.body;
@@ -82,7 +78,6 @@ async function run() {
       }
     });
 
-    // Add a new user
     app.post('/users', async (req, res) => {
       try {
         const newUser = req.body;
@@ -103,7 +98,6 @@ async function run() {
       }
     });
 
-    // Get all books (optionally by email)
     app.get('/books', async (req, res) => {
       try {
         const email = req.query.email;
@@ -117,7 +111,6 @@ async function run() {
       }
     });
 
-    // Get recent books
     app.get('/recentBook', async (req, res) => {
       try {
         const limit = parseInt(req.query.limit) || 3;
@@ -133,7 +126,6 @@ async function run() {
       }
     });
 
-    // Get book by ID
     app.get('/books/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -145,7 +137,6 @@ async function run() {
       }
     });
 
-    // Get books by email
     app.get('/books/by-email/:email', async (req, res) => {
       try {
         const email = req.params.email;
@@ -157,7 +148,6 @@ async function run() {
       }
     });
 
-    // Get books by genre (case-insensitive)
     app.get('/home/genre/:genre', async (req, res) => {
       try {
         const genreParam = req.params.genre;
@@ -176,7 +166,6 @@ async function run() {
       }
     });
 
-    // Update book by ID
     app.patch('/books/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -217,7 +206,7 @@ async function run() {
       }
     });
 
-    await client.db('admin').command({ ping: 1 });
+    // await client.db('admin').command({ ping: 1 });
     console.log('✅ Connected successfully to MongoDB!');
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err);
